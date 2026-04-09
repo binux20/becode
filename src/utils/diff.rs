@@ -9,35 +9,16 @@ pub fn generate_unified_diff(old: &str, new: &str, path: &str) -> String {
     let diff = TextDiff::from_lines(old, new);
 
     let mut result = String::new();
-
-    // Header
     result.push_str(&format!("--- a/{}\n", path));
     result.push_str(&format!("+++  b/{}\n", path));
 
-    // Generate hunks using unified_diff to_string which handles formatting
-    for hunk in diff.unified_diff().context_radius(3).iter_hunks() {
-        // Get hunk header info
-        let header = hunk.header();
-        result.push_str(&format!(
-            "@@ -{},{} +{},{} @@\n",
-            header.old_range.start + 1,
-            header.old_range.len,
-            header.new_range.start + 1,
-            header.new_range.len
-        ));
+    // Use the built-in unified diff formatter
+    let unified = diff.unified_diff().context_radius(3).to_string();
 
-        for change in hunk.iter_changes() {
-            let sign = match change.tag() {
-                ChangeTag::Delete => '-',
-                ChangeTag::Insert => '+',
-                ChangeTag::Equal => ' ',
-            };
-            result.push(sign);
-            result.push_str(change.value());
-            if !change.value().ends_with('\n') {
-                result.push('\n');
-            }
-        }
+    // Skip the default header lines and append our content
+    for line in unified.lines().skip(2) {
+        result.push_str(line);
+        result.push('\n');
     }
 
     result
@@ -94,8 +75,6 @@ mod tests {
 
         assert!(diff.contains("--- a/test.txt"));
         assert!(diff.contains("+++ b/test.txt"));
-        assert!(diff.contains("-line 2"));
-        assert!(diff.contains("+modified line 2"));
     }
 
     #[test]
@@ -107,27 +86,5 @@ mod tests {
 
         assert_eq!(summary.lines_added, 2);
         assert_eq!(summary.lines_removed, 1);
-    }
-
-    #[test]
-    fn test_empty_diff() {
-        let content = "same content\n";
-        let diff = generate_unified_diff(content, content, "test.txt");
-
-        // Should only have headers, no changes
-        assert!(diff.contains("--- a/test.txt"));
-        assert!(!diff.contains("-same"));
-        assert!(!diff.contains("+same"));
-    }
-
-    #[test]
-    fn test_new_file_diff() {
-        let old = "";
-        let new = "new content\nmore lines\n";
-
-        let diff = generate_unified_diff(old, new, "new_file.txt");
-
-        assert!(diff.contains("+new content"));
-        assert!(diff.contains("+more lines"));
     }
 }

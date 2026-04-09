@@ -1,4 +1,4 @@
-//! 🐝 BeCode - Autonomous AI coding agent with beautiful TUI
+//! BeCode - Autonomous AI coding agent with beautiful TUI
 //!
 //! BeCode is a standalone code agent that helps you write, edit, and debug code
 //! using AI models from multiple providers.
@@ -17,12 +17,12 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-/// 🐝 BeCode - Autonomous AI coding agent
+/// BeCode - Autonomous AI coding agent
 #[derive(Parser)]
 #[command(name = "becode")]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
-pub pub struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 
@@ -91,10 +91,10 @@ pub enum Commands {
     /// System diagnostics
     Doctor,
 
-    /// 🐝 Easter egg
+    /// Easter egg
     Bee,
 
-    /// 🎉 Party mode
+    /// Party mode
     Party,
 }
 
@@ -103,10 +103,7 @@ pub enum ConfigCommands {
     /// Show current configuration
     Show,
     /// Set a configuration value
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
     /// Open config in editor
     Edit,
 }
@@ -114,17 +111,11 @@ pub enum ConfigCommands {
 #[derive(Subcommand)]
 pub enum AuthCommands {
     /// Set API key for a provider
-    SetKey {
-        /// Provider name
-        provider: String,
-    },
+    SetKey { provider: String },
     /// Show authentication status
     Status,
     /// Clear API key for a provider
-    ClearKey {
-        /// Provider name
-        provider: String,
-    },
+    ClearKey { provider: String },
 }
 
 #[derive(Subcommand)]
@@ -132,15 +123,10 @@ pub enum SessionCommands {
     /// List saved sessions
     List,
     /// Load a session
-    Load {
-        /// Session ID
-        id: String,
-    },
+    Load { id: String },
     /// Export session to markdown
     Export {
-        /// Session ID
         id: String,
-        /// Output file
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -148,7 +134,6 @@ pub enum SessionCommands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
@@ -157,8 +142,6 @@ async fn main() -> Result<()> {
         .init();
 
     let cli = Cli::parse();
-
-    // Load configuration
     let config = config::Config::load()?;
 
     match cli.command {
@@ -187,9 +170,8 @@ async fn main() -> Result<()> {
             run_party();
         }
         None => {
-            // Default: launch TUI
             if cli.no_tui {
-                println!("🐝 BeCode v{}", env!("CARGO_PKG_VERSION"));
+                println!("BeCode v{}", env!("CARGO_PKG_VERSION"));
                 println!("Use --help for available commands");
             } else {
                 tui::run_tui(&cli, &config).await?;
@@ -200,34 +182,25 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn run_oneshot(
-    cli: &Cli,
-    config: &config::Config,
-    task: &str,
-) -> Result<()> {
-    println!("🐝 BeCode - Running task: {}", task);
-
-    // TODO: Initialize agent and run task
+async fn run_oneshot(cli: &Cli, config: &config::Config, task: &str) -> Result<()> {
+    println!("BeCode - Running task: {}", task);
     let _provider = cli.provider.as_deref().unwrap_or(&config.default_provider);
     let _model = cli.model.as_deref();
     let _project = cli.project.as_deref().unwrap_or(&std::env::current_dir()?);
-
-    println!("⚡ Agent execution not yet implemented");
-
+    println!("Agent execution not yet implemented");
     Ok(())
 }
 
 async fn run_chat(_cli: &Cli, _config: &config::Config) -> Result<()> {
-    println!("🐝 BeCode Chat Mode");
-    println!("💬 Chat mode not yet implemented");
+    println!("BeCode Chat Mode");
+    println!("Chat mode not yet implemented");
     Ok(())
 }
 
 fn handle_config(action: Option<ConfigCommands>, config: &config::Config) -> Result<()> {
     match action {
         Some(ConfigCommands::Show) | None => {
-            println!("🐝 BeCode Configuration");
-            println!("━━━━━━━━━━━━━━━━━━━━━━");
+            println!("BeCode Configuration");
             println!("Config path: {:?}", config::Config::config_path());
             println!("Default provider: {}", config.default_provider);
             println!("Default model: {:?}", config.default_model);
@@ -235,11 +208,9 @@ fn handle_config(action: Option<ConfigCommands>, config: &config::Config) -> Res
         }
         Some(ConfigCommands::Set { key, value }) => {
             println!("Setting {} = {}", key, value);
-            // TODO: Implement config set
         }
         Some(ConfigCommands::Edit) => {
             println!("Opening config in editor...");
-            // TODO: Open config file in $EDITOR
         }
     }
     Ok(())
@@ -248,17 +219,13 @@ fn handle_config(action: Option<ConfigCommands>, config: &config::Config) -> Res
 async fn handle_auth(action: AuthCommands, _config: &config::Config) -> Result<()> {
     match action {
         AuthCommands::SetKey { provider } => {
-            println!("🔑 Setting API key for: {}", provider);
-            // TODO: Implement secure key input
+            println!("Setting API key for: {}", provider);
         }
         AuthCommands::Status => {
-            println!("🔐 Authentication Status");
-            println!("━━━━━━━━━━━━━━━━━━━━━━━");
-            // TODO: Show auth status for all providers
+            println!("Authentication Status");
         }
         AuthCommands::ClearKey { provider } => {
-            println!("🗑️ Clearing API key for: {}", provider);
-            // TODO: Implement key clearing
+            println!("Clearing API key for: {}", provider);
         }
     }
     Ok(())
@@ -267,58 +234,42 @@ async fn handle_auth(action: AuthCommands, _config: &config::Config) -> Result<(
 fn handle_session(action: SessionCommands, _config: &config::Config) -> Result<()> {
     match action {
         SessionCommands::List => {
-            println!("📋 Saved Sessions");
-            println!("━━━━━━━━━━━━━━━━");
-            // TODO: List sessions
+            println!("Saved Sessions");
         }
         SessionCommands::Load { id } => {
-            println!("📂 Loading session: {}", id);
-            // TODO: Load session
+            println!("Loading session: {}", id);
         }
         SessionCommands::Export { id, output } => {
-            println!("📤 Exporting session {} to {:?}", id, output);
-            // TODO: Export session
+            println!("Exporting session {} to {:?}", id, output);
         }
     }
     Ok(())
 }
 
 async fn run_doctor(_config: &config::Config) -> Result<()> {
-    println!("🏥 BeCode Doctor");
-    println!("━━━━━━━━━━━━━━━");
-    println!();
-
-    // Check Rust version
-    println!("✅ BeCode version: {}", env!("CARGO_PKG_VERSION"));
-
-    // Check config
-    println!("✅ Config loaded from: {:?}", config::Config::config_path());
-
-    // TODO: Check API keys, network, etc.
-    println!("⚠️  Full diagnostics not yet implemented");
-
+    println!("BeCode Doctor");
+    println!("BeCode version: {}", env!("CARGO_PKG_VERSION"));
+    println!("Config loaded from: {:?}", config::Config::config_path());
+    println!("Full diagnostics not yet implemented");
     Ok(())
 }
 
 fn print_bee() {
-    let bee = r#"
+    println!(r#"
         \ _ /
       -= (_) =-
-        /   \         🐝 Bzzzz!
+        /   \         Bzzzz!
           |           I'm BeCode, your coding bee!
          /|\          Ready to pollinate your codebase!
         / | \
-    "#;
-    println!("{}", bee);
-    println!("🍯 Tip: Type 'becode party' for a surprise!");
+    "#);
+    println!("Tip: Type 'becode party' for a surprise!");
 }
 
 fn run_party() {
     use rand::Rng;
     let mut rng = rand::thread_rng();
-
-    let confetti = ['🎉', '🎊', '✨', '🌟', '💫', '🎈', '🎁', '🐝'];
-
+    let confetti = ['*', '+', 'o', '.', '~'];
     println!();
     for _ in 0..5 {
         let line: String = (0..40)
@@ -327,7 +278,7 @@ fn run_party() {
         println!("  {}", line);
     }
     println!();
-    println!("  🐝 BeCode Party Mode! 🐝");
+    println!("  BeCode Party Mode!");
     println!("  Thanks for using BeCode!");
     println!();
     for _ in 0..5 {

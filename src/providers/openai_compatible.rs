@@ -1,12 +1,13 @@
 //! Generic OpenAI-Compatible provider (with native tool calling)
 
 use super::traits::{
-    Attachment, LLMProvider, LLMResponse, LLMToolCall, Message, MessageContent,
+    Attachment, ContentPart, LLMProvider, LLMResponse, LLMToolCall, Message, MessageContent,
     MessageRole, ProviderError, StreamChunk, Usage,
 };
 use crate::tools::ToolSpec;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+use reqwest::Client;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::pin::Pin;
 use tokio_stream::Stream;
@@ -17,6 +18,7 @@ pub struct OpenAICompatibleProvider {
     base_url: String,
     api_key: Option<String>,
     model: Option<String>,
+    client: Client,
 }
 
 impl OpenAICompatibleProvider {
@@ -31,74 +33,52 @@ impl OpenAICompatibleProvider {
             base_url,
             api_key,
             model,
+            client: Client::new(),
         }
     }
 
-    /// Convert tools to OpenAI function format
     fn tools_to_functions(tools: &[ToolSpec]) -> Vec<Value> {
-        tools
-            .iter()
-            .map(|t| {
-                json!({
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.input_schema
-                    }
-                })
+        tools.iter().map(|t| {
+            json!({
+                "type": "function",
+                "function": {
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.input_schema
+                }
             })
-            .collect()
+        }).collect()
     }
 
-    /// Convert messages to OpenAI format
     fn messages_to_api(messages: &[Message]) -> Vec<Value> {
-        messages
-            .iter()
-            .map(|msg| {
-                let role = match msg.role {
-                    MessageRole::System => "system",
-                    MessageRole::User => "user",
-                    MessageRole::Assistant => "assistant",
-                    MessageRole::Tool => "tool",
-                };
+        messages.iter().map(|msg| {
+            let role = match msg.role {
+                MessageRole::System => "system",
+                MessageRole::User => "user",
+                MessageRole::Assistant => "assistant",
+                MessageRole::Tool => "tool",
+            };
 
-                let content = match &msg.content {
-                    MessageContent::Text(t) => json!(t),
-                    MessageContent::Parts(parts) => {
-                        let api_parts: Vec<Value> = parts
-                            .iter()
-                            .map(|p| match p {
-                                super::traits::ContentPart::Text { text } => {
-                                    json!({ "type": "text", "text": text })
-                                }
-                                super::traits::ContentPart::ImageUrl { image_url } => {
-                                    json!({
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": image_url.url,
-                                            "detail": image_url.detail
-                                        }
-                                    })
-                                }
-                            })
-                            .collect();
-                        json!(api_parts)
-                    }
-                };
-
-                let mut msg_json = json!({
-                    "role": role,
-                    "content": content
-                });
-
-                if let Some(ref tool_call_id) = msg.tool_call_id {
-                    msg_json["tool_call_id"] = json!(tool_call_id);
+            let content = match &msg.content {
+                MessageContent::Text(t) => json!(t),
+                MessageContent::Parts(parts) => {
+                    let api_parts: Vec<Value> = parts.iter().map(|p| match p {
+                        ContentPart::Text { text } => json!({ "type": "text", "text": text }),
+                        ContentPart::ImageUrl { image_url } => json!({
+                            "type": "image_url",
+                            "image_url": { "url": image_url.url, "detail": image_url.detail }
+                        }),
+                    }).collect();
+                    json!(api_parts)
                 }
+            };
 
-                msg_json
-            })
-            .collect()
+            let mut msg_json = json!({ "role": role, "content": content });
+            if let Some(ref tool_call_id) = msg.tool_call_id {
+                msg_json["tool_call_id"] = json!(tool_call_id);
+            }
+            msg_json
+        }).collect()
     }
 }
 
@@ -158,7 +138,7 @@ impl LLMProvider for OpenAICompatibleProvider {
     }
 
     fn supports_vision(&self) -> bool {
-        true // Assume yes, user can configure
+        true
     }
 
     async fn chat(
@@ -169,11 +149,9 @@ impl LLMProvider for OpenAICompatibleProvider {
         model: Option<&str>,
     ) -> Result<LLMResponse, ProviderError> {
         let model = model.unwrap_or_else(|| self.default_model());
-        let client = reqwest::Client::new();
-
         let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
 
-        let mut request = client
+        let mut request = self.client
             .post(&url)
             .header("Content-Type", "application/json");
 
@@ -216,29 +194,22 @@ impl LLMProvider for OpenAICompatibleProvider {
             .await
             .map_err(|e| ProviderError::ParseError(e.to_string()))?;
 
-        let choice = response_json
-            .choices
-            .first()
-            .ok_or_else(|| ProviderError::InvalidResponse("No choices in response".to_string()))?;
+        let choice = response_json.choices.first()
+            .ok_or_else(|| ProviderError::InvalidResponse("No choices".to_string()))?;
 
         let content = choice.message.content.clone().unwrap_or_default();
 
-        let tool_calls: Vec<LLMToolCall> = choice
-            .message
-            .tool_calls
+        let tool_calls: Vec<LLMToolCall> = choice.message.tool_calls
             .as_ref()
             .map(|calls| {
-                calls
-                    .iter()
-                    .filter_map(|tc| {
-                        let args: Value = serde_json::from_str(&tc.function.arguments).ok()?;
-                        Some(LLMToolCall {
-                            id: tc.id.clone(),
-                            name: tc.function.name.clone(),
-                            arguments: args,
-                        })
+                calls.iter().filter_map(|tc| {
+                    let args: Value = serde_json::from_str(&tc.function.arguments).ok()?;
+                    Some(LLMToolCall {
+                        id: tc.id.clone(),
+                        name: tc.function.name.clone(),
+                        arguments: args,
                     })
-                    .collect()
+                }).collect()
             })
             .unwrap_or_default();
 
@@ -263,8 +234,6 @@ impl LLMProvider for OpenAICompatibleProvider {
         attachments: Option<&[Attachment]>,
         model: Option<&str>,
     ) -> Result<Pin<Box<dyn Stream<Item = StreamChunk> + Send>>, ProviderError> {
-        // For now, use non-streaming
-        // TODO: Implement SSE streaming
         let response = self.chat(messages, tools, attachments, model).await?;
 
         let mut chunks = vec![StreamChunk::Text(response.content)];

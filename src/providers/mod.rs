@@ -19,8 +19,8 @@ mod openai_compatible;
 mod openai_compatible_no_tools;
 
 pub use traits::{
-    Attachment, AttachmentData, LLMProvider, LLMResponse, Message, MessageContent,
-    ProviderError, StreamChunk,
+    Attachment, AttachmentData, ContentPart, LLMProvider, LLMResponse, LLMToolCall,
+    Message, MessageContent, MessageRole, ProviderError, StreamChunk, Usage,
 };
 
 pub use anthropic::AnthropicProvider;
@@ -87,10 +87,7 @@ fn create_from_config(
     config: &ProviderConfig,
     secrets: &SecretStore,
 ) -> Result<Arc<dyn LLMProvider>, ProviderError> {
-    let provider_type = config
-        .provider_type
-        .as_deref()
-        .unwrap_or("openai-compatible");
+    let provider_type = config.provider_type.as_deref().unwrap_or("openai-compatible");
 
     // Get API key (from config, secrets, or env)
     let api_key = config
@@ -132,9 +129,6 @@ fn create_from_config(
                 model,
             )))
         }
-        _ => Err(ProviderError::UnknownProvider(format!(
-            "{}:{}",
-            name, provider_type
-        ))),
+        _ => Err(ProviderError::UnknownProvider(format!("{}:{}", name, provider_type))),
     }
 }

@@ -14,14 +14,16 @@ pub fn generate_unified_diff(old: &str, new: &str, path: &str) -> String {
     result.push_str(&format!("--- a/{}\n", path));
     result.push_str(&format!("+++  b/{}\n", path));
 
-    // Generate hunks
+    // Generate hunks using unified_diff to_string which handles formatting
     for hunk in diff.unified_diff().context_radius(3).iter_hunks() {
+        // Get hunk header info
+        let header = hunk.header();
         result.push_str(&format!(
             "@@ -{},{} +{},{} @@\n",
-            hunk.header().old_range().start + 1,
-            hunk.header().old_range().len(),
-            hunk.header().new_range().start + 1,
-            hunk.header().new_range().len()
+            header.old_range.start + 1,
+            header.old_range.len,
+            header.new_range.start + 1,
+            header.new_range.len
         ));
 
         for change in hunk.iter_changes() {

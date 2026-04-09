@@ -22,7 +22,7 @@ use std::path::PathBuf;
 #[command(name = "becode")]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
-pub struct Cli {
+pub pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 

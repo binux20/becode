@@ -145,8 +145,8 @@ async fn main() -> Result<()> {
     let config = config::Config::load()?;
 
     match cli.command {
-        Some(Commands::Run { task }) => {
-            run_oneshot(&cli, &config, &task).await?;
+        Some(Commands::Run { ref task }) => {
+            run_oneshot(&cli, &config, task).await?;
         }
         Some(Commands::Chat) => {
             run_chat(&cli, &config).await?;

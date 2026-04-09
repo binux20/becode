@@ -1,13 +1,8 @@
 //! Main TUI application state
 
 use crate::config::Config;
-use crate::providers::{LLMProvider, Message, create_provider};
-use crate::tools::ToolRegistry;
-use crate::agent::runtime::{AgentRuntime, AgentConfig, AgentCallback, AgentResult};
 use crate::permissions::Permission;
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::mpsc;
 
 /// TUI Application state
 pub struct App {

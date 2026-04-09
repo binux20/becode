@@ -4,8 +4,8 @@
   "version": "2.0.0",
   "identifier": "com.becode.app",
   "build": {
-    "beforeBuildCommand": "npm run --prefix ../frontend build",
-    "beforeDevCommand": "npm run --prefix ../frontend dev",
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
     "frontendDist": "../frontend/dist",
     "devUrl": "http://localhost:5173"
   },

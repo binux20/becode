@@ -42,8 +42,8 @@ jobs:
         run: cargo install tauri-cli --version "^2.0.0"
 
       - name: Build Tauri App
-        working-directory: frontend
-        run: npm run tauri build
+        run: cargo tauri build
+        working-directory: src-tauri
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

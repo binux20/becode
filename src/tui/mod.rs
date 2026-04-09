@@ -11,10 +11,11 @@ mod widgets;
 pub use app::App;
 
 use crate::config::Config;
+use crate::Cli;
 use anyhow::Result;
 
 /// Run the TUI application
-pub async fn run_tui(cli: &crate::Cli, config: &Config) -> Result<()> {
+pub async fn run_tui(cli: &Cli, config: &Config) -> Result<()> {
     // For now, just print a message
     // TODO: Implement full TUI
     println!("🐝 BeCode TUI");

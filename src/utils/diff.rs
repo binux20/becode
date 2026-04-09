@@ -18,10 +18,10 @@ pub fn generate_unified_diff(old: &str, new: &str, path: &str) -> String {
     for hunk in diff.unified_diff().context_radius(3).iter_hunks() {
         result.push_str(&format!(
             "@@ -{},{} +{},{} @@\n",
-            hunk.old_range().start + 1,
-            hunk.old_range().len(),
-            hunk.new_range().start + 1,
-            hunk.new_range().len()
+            hunk.header().old_range().start + 1,
+            hunk.header().old_range().len(),
+            hunk.header().new_range().start + 1,
+            hunk.header().new_range().len()
         ));
 
         for change in hunk.iter_changes() {

@@ -22,45 +22,45 @@ use std::path::PathBuf;
 #[command(name = "becode")]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
-struct Cli {
+pub struct Cli {
     #[command(subcommand)]
-    command: Option<Commands>,
+    pub command: Option<Commands>,
 
     /// Provider to use (anthropic, openai, gemini, etc.)
     #[arg(short, long, global = true)]
-    provider: Option<String>,
+    pub provider: Option<String>,
 
     /// Model to use
     #[arg(short, long, global = true)]
-    model: Option<String>,
+    pub model: Option<String>,
 
     /// Project directory
     #[arg(long, global = true)]
-    project: Option<PathBuf>,
+    pub project: Option<PathBuf>,
 
     /// Permission mode (read-only, workspace-write, danger)
     #[arg(long, global = true, default_value = "workspace-write")]
-    permission: String,
+    pub permission: String,
 
     /// Maximum agent steps
     #[arg(long, global = true, default_value = "25")]
-    max_steps: u32,
+    pub max_steps: u32,
 
     /// Resume last session
     #[arg(long, global = true)]
-    resume: bool,
+    pub resume: bool,
 
     /// Disable TUI, use simple output
     #[arg(long, global = true)]
-    no_tui: bool,
+    pub no_tui: bool,
 
     /// Attach file (image or text) to first message
     #[arg(long, global = true)]
-    attach: Option<PathBuf>,
+    pub attach: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
-enum Commands {
+pub enum Commands {
     /// Run a one-shot task without interactive TUI
     Run {
         /// Task description
@@ -99,7 +99,7 @@ enum Commands {
 }
 
 #[derive(Subcommand)]
-enum ConfigCommands {
+pub enum ConfigCommands {
     /// Show current configuration
     Show,
     /// Set a configuration value
@@ -112,7 +112,7 @@ enum ConfigCommands {
 }
 
 #[derive(Subcommand)]
-enum AuthCommands {
+pub enum AuthCommands {
     /// Set API key for a provider
     SetKey {
         /// Provider name
@@ -128,7 +128,7 @@ enum AuthCommands {
 }
 
 #[derive(Subcommand)]
-enum SessionCommands {
+pub enum SessionCommands {
     /// List saved sessions
     List,
     /// Load a session

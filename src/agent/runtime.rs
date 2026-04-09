@@ -1,8 +1,7 @@
 //! Agent runtime - the main conversation loop
 
-use crate::config::Config;
 use crate::permissions::{Permission, PermissionEnforcer};
-use crate::providers::{LLMProvider, LLMResponse, Message};
+use crate::providers::{LLMProvider, Message};
 use crate::session::Session;
 use crate::tools::{ToolCall, ToolContext, ToolOutput, ToolRegistry};
 use anyhow::Result;
@@ -10,7 +9,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::parser::{ParsedResponse, ResponseParser};
-use super::recovery::RecoveryStrategy;
 
 /// Result of an agent run
 #[derive(Debug)]
@@ -79,6 +77,7 @@ impl AgentRuntime {
         config: AgentConfig,
     ) -> Self {
         let enforcer = Arc::new(PermissionEnforcer::new(permission, workspace.clone()));
+        let supports_tools = provider.supports_tools();
         let session = Session::new(
             workspace,
             provider.name().to_string(),
@@ -92,7 +91,7 @@ impl AgentRuntime {
             permission,
             enforcer,
             config,
-            parser: ResponseParser::new(provider.supports_tools()),
+            parser: ResponseParser::new(supports_tools),
         }
     }
 
@@ -113,7 +112,7 @@ impl AgentRuntime {
         ];
 
         // Agent loop
-        for step in 1..=self.config.max_steps {
+        for _step in 1..=self.config.max_steps {
             if callback.should_cancel() {
                 return Ok(AgentResult::Cancelled);
             }

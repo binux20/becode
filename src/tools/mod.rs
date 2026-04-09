@@ -23,7 +23,7 @@ mod web_fetch;
 mod web_search;
 mod task_track;
 
-pub use traits::{Tool, ToolCall, ToolError, ToolOutput, ToolSpec};
+pub use traits::{Tool, ToolCall, ToolContext, ToolError, ToolOutput, ToolSpec};
 pub use registry::ToolRegistry;
 
 // Re-export individual tools

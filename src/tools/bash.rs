@@ -90,7 +90,7 @@ impl Tool for BashTool {
         };
 
         // Execute command
-        let mut child = Command::new(shell)
+        let child = Command::new(shell)
             .arg(shell_arg)
             .arg(command)
             .current_dir(&cwd)
@@ -129,8 +129,7 @@ impl Tool for BashTool {
                 reason: format!("Command failed: {}", e),
             }),
             Err(_) => {
-                // Timeout - try to kill the process
-                let _ = child.kill().await;
+                // Timeout - process already consumed by wait_with_output
                 Err(ToolError::Timeout {
                     command: command.to_string(),
                     timeout_secs: timeout_secs as u32,

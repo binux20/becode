@@ -7,7 +7,7 @@
 
 use super::traits::{
     Attachment, LLMProvider, LLMResponse, LLMToolCall, Message, MessageContent,
-    MessageRole, ProviderError, StreamChunk, Usage,
+    MessageRole, ProviderError, StreamChunk,
 };
 use crate::tools::ToolSpec;
 use async_trait::async_trait;
@@ -119,23 +119,21 @@ When the task is complete, respond with:
             }
         }
 
-        let response = req_builder.send().await.map_err(|e| ProviderError::Network {
-            message: e.to_string(),
-        })?;
+        let response = req_builder.send().await.map_err(|e| ProviderError::NetworkError(e.to_string()))?;
 
         if !response.status().is_success() {
-            let status = response.status();
+            let status = response.status().as_u16();
             let text = response.text().await.unwrap_or_default();
-            return Err(ProviderError::Api {
-                status_code: status.as_u16(),
+            return Err(ProviderError::ApiError {
+                status,
                 message: text,
             });
         }
 
-        let chat_response: ChatResponse =
-            response.json().await.map_err(|e| ProviderError::Parse {
-                message: e.to_string(),
-            })?;
+        let chat_response: ChatResponse = response
+            .json()
+            .await
+            .map_err(|e| ProviderError::ParseError(e.to_string()))?;
 
         let content = chat_response
             .choices
@@ -191,8 +189,6 @@ When the task is complete, respond with:
     /// Parse a single tool call from JSON string
     fn parse_single_tool_call(&self, json_str: &str) -> Result<LLMToolCall, ()> {
         let json_str = json_str.trim();
-
-        // Try to parse as JSON
         let value: Value = serde_json::from_str(json_str).map_err(|_| ())?;
 
         // Check for "done" response
@@ -273,6 +269,7 @@ struct ChatMessage {
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
     choices: Vec<Choice>,
+    #[allow(dead_code)]
     usage: Option<ApiUsage>,
 }
 
@@ -287,10 +284,10 @@ struct ResponseMessage {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ApiUsage {
     prompt_tokens: u32,
     completion_tokens: u32,
-    #[allow(dead_code)]
     total_tokens: u32,
 }
 
@@ -321,8 +318,9 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
         messages: &[Message],
         tools: Option<&[ToolSpec]>,
         _attachments: Option<&[Attachment]>,
+        model: Option<&str>,
     ) -> Result<LLMResponse, ProviderError> {
-        let model = self.model.as_deref().unwrap_or("llama3.1:8b");
+        let model = model.unwrap_or_else(|| self.model.as_deref().unwrap_or("llama3.1:8b"));
 
         // Build messages with tool system prompt
         let mut api_messages: Vec<ChatMessage> = Vec::new();
@@ -343,15 +341,12 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
                 MessageRole::System => "system",
                 MessageRole::User => "user",
                 MessageRole::Assistant => "assistant",
-                MessageRole::ToolResult => "user", // Tool results sent as user messages
+                MessageRole::Tool => "user", // Tool results sent as user messages
             };
 
             let content = match &msg.content {
                 MessageContent::Text(t) => t.clone(),
-                MessageContent::ToolResult { tool_use_id, result } => {
-                    format!("Tool result for {}:\n{}", tool_use_id, result)
-                }
-                MessageContent::MultiPart(parts) => {
+                MessageContent::Parts(parts) => {
                     // Extract text from parts
                     parts
                         .iter()
@@ -367,6 +362,17 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
                 }
             };
 
+            // For tool results, format nicely
+            let content = if msg.role == MessageRole::Tool {
+                if let Some(ref tool_id) = msg.tool_call_id {
+                    format!("Tool result for {}:\n{}", tool_id, content)
+                } else {
+                    format!("Tool result:\n{}", content)
+                }
+            } else {
+                content
+            };
+
             api_messages.push(ChatMessage {
                 role: role.to_string(),
                 content,
@@ -380,7 +386,7 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
         let tool_calls = self.parse_tool_calls(&response_text);
 
         // Check for done signal
-        let stop_reason = if self.is_done_response(&response_text).is_some() {
+        let finish_reason = if self.is_done_response(&response_text).is_some() {
             Some("done".to_string())
         } else if tool_calls.is_empty() {
             Some("stop".to_string())
@@ -388,25 +394,23 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
             Some("tool_calls".to_string())
         };
 
+        // Extract non-JSON content if there are tool calls
+        let content = if tool_calls.is_empty() {
+            response_text
+        } else {
+            let text_content = self.extract_non_json_content(&response_text);
+            if text_content.is_empty() {
+                response_text // Return full response if no non-JSON content
+            } else {
+                text_content
+            }
+        };
+
         Ok(LLMResponse {
-            content: if tool_calls.is_empty() {
-                Some(response_text)
-            } else {
-                let text_content = self.extract_non_json_content(&response_text);
-                if text_content.is_empty() {
-                    None
-                } else {
-                    Some(text_content)
-                }
-            },
-            tool_calls: if tool_calls.is_empty() {
-                None
-            } else {
-                Some(tool_calls)
-            },
+            content,
+            tool_calls,
+            finish_reason,
             usage: None,
-            model: Some(model.to_string()),
-            stop_reason,
         })
     }
 
@@ -415,12 +419,13 @@ impl LLMProvider for OpenAICompatibleNoToolsProvider {
         messages: &[Message],
         tools: Option<&[ToolSpec]>,
         attachments: Option<&[Attachment]>,
+        model: Option<&str>,
     ) -> Result<Pin<Box<dyn Stream<Item = StreamChunk> + Send>>, ProviderError> {
         // For now, use non-streaming and return as single chunk
-        let response = self.chat(messages, tools, attachments).await?;
+        let response = self.chat(messages, tools, attachments, model).await?;
 
         let chunks = vec![
-            StreamChunk::Content(response.content.unwrap_or_default()),
+            StreamChunk::Text(response.content),
             StreamChunk::Done,
         ];
 

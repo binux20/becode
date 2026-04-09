@@ -15,11 +15,13 @@ pub fn read_file_attachment(path: &Path) -> Result<FileAttachment> {
         .first_or_text_plain()
         .to_string();
 
+    let size = content.len();
+
     Ok(FileAttachment {
         filename,
         mime_type,
         content,
-        size: content.len(),
+        size,
     })
 }
 

@@ -11,25 +11,29 @@ mod widgets;
 pub use app::App;
 
 use crate::config::Config;
-use crate::Cli;
 use anyhow::Result;
 
+/// TUI settings passed from CLI
+pub struct TuiSettings {
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub permission: String,
+}
+
 /// Run the TUI application
-pub async fn run_tui(cli: &Cli, config: &Config) -> Result<()> {
-    // For now, just print a message
-    // TODO: Implement full TUI
-    println!("🐝 BeCode TUI");
-    println!("━━━━━━━━━━━━━");
+pub async fn run_tui(settings: &TuiSettings, config: &Config) -> Result<()> {
+    println!("BeCode TUI");
+    println!("============");
     println!();
     println!("TUI is under construction!");
     println!();
     println!("Current settings:");
-    println!("  Provider: {}", cli.provider.as_deref().unwrap_or(&config.default_provider));
-    println!("  Model: {}", cli.model.as_deref().or(config.default_model.as_deref()).unwrap_or("(default)"));
-    println!("  Permission: {}", cli.permission);
+    println!("  Provider: {}", settings.provider.as_deref().unwrap_or(&config.default_provider));
+    println!("  Model: {}", settings.model.as_deref().or(config.default_model.as_deref()).unwrap_or("(default)"));
+    println!("  Permission: {}", settings.permission);
     println!();
     println!("For now, use 'becode run <task>' for one-shot execution.");
-    println!("Full TUI coming soon! 🚧");
+    println!("Full TUI coming soon!");
 
     Ok(())
 }

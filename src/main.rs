@@ -174,7 +174,12 @@ async fn main() -> Result<()> {
                 println!("BeCode v{}", env!("CARGO_PKG_VERSION"));
                 println!("Use --help for available commands");
             } else {
-                tui::run_tui(&cli, &config).await?;
+                let settings = tui::TuiSettings {
+                    provider: cli.provider.clone(),
+                    model: cli.model.clone(),
+                    permission: cli.permission.clone(),
+                };
+                tui::run_tui(&settings, &config).await?;
             }
         }
     }

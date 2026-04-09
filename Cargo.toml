@@ -1,9 +1,9 @@
 [package]
 name = "becode"
 version = "2.0.0"
-edition = "2024"
+edition = "2021"
 authors = ["BeCode Contributors"]
-description = "🐝 BeCode - Autonomous AI coding agent with beautiful TUI"
+description = "BeCode - Autonomous AI coding agent with beautiful TUI"
 readme = "README.md"
 license = "MIT"
 keywords = ["ai", "coding", "agent", "cli", "tui"]
@@ -36,9 +36,9 @@ ratatui = "0.29"
 crossterm = "0.28"
 
 # File operations
-ignore = "0.4"              # gitignore-aware glob/walk
-grep-regex = "0.1"          # ripgrep regex
-grep-searcher = "0.1"       # ripgrep searcher
+ignore = "0.4"
+grep-regex = "0.1"
+grep-searcher = "0.1"
 walkdir = "2"
 glob = "0.3"
 
@@ -57,7 +57,7 @@ base64 = "0.22"
 mime_guess = "2"
 
 # Diff generation
-similar = "2"               # For unified diff
+similar = "2"
 
 # Random (for mascot phrases)
 rand = "0.8"

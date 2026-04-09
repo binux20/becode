@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Background circle with gradient -->
+  <defs>
+    <linearGradient id="beeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFC800;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer glow -->
+  <circle cx="50" cy="50" r="45" fill="url(#beeGradient)" filter="url(#glow)" opacity="0.3"/>
+
+  <!-- Main body -->
+  <ellipse cx="50" cy="55" rx="25" ry="30" fill="#FFC800"/>
+
+  <!-- Stripes -->
+  <ellipse cx="50" cy="45" rx="22" ry="8" fill="#1E1E1E"/>
+  <ellipse cx="50" cy="60" rx="20" ry="7" fill="#1E1E1E"/>
+  <ellipse cx="50" cy="73" rx="15" ry="5" fill="#1E1E1E"/>
+
+  <!-- Head -->
+  <circle cx="50" cy="25" r="18" fill="#FFC800"/>
+
+  <!-- Eyes -->
+  <ellipse cx="43" cy="23" rx="5" ry="6" fill="#1E1E1E"/>
+  <ellipse cx="57" cy="23" rx="5" ry="6" fill="#1E1E1E"/>
+  <circle cx="44" cy="21" r="2" fill="white"/>
+  <circle cx="58" cy="21" r="2" fill="white"/>
+
+  <!-- Antennae -->
+  <path d="M 42 12 Q 38 5 35 3" stroke="#1E1E1E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 58 12 Q 62 5 65 3" stroke="#1E1E1E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="35" cy="3" r="3" fill="#FF8C00"/>
+  <circle cx="65" cy="3" r="3" fill="#FF8C00"/>
+
+  <!-- Wings -->
+  <ellipse cx="28" cy="45" rx="15" ry="10" fill="white" opacity="0.7" transform="rotate(-20 28 45)"/>
+  <ellipse cx="72" cy="45" rx="15" ry="10" fill="white" opacity="0.7" transform="rotate(20 72 45)"/>
+
+  <!-- Smile -->
+  <path d="M 43 30 Q 50 36 57 30" stroke="#1E1E1E" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Stinger -->
+  <path d="M 50 85 L 50 95" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round"/>
+</svg>

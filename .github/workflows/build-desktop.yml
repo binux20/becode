@@ -44,8 +44,12 @@ jobs:
 
       - name: Install ImageMagick and create ICO
         run: |
-          choco install imagemagick -y
-          magick src-tauri/icons/icon.png -resize 256x256 src-tauri/icons/icon.ico
+          choco install imagemagick -y --no-progress
+          refreshenv
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          magick convert src-tauri/icons/icon.png -resize 256x256 -define icon:auto-resize=256,128,64,48,32,16 src-tauri/icons/icon.ico
+          if (Test-Path src-tauri/icons/icon.ico) { Write-Host "ICO created successfully" } else { Write-Host "ICO creation failed"; exit 1 }
+          dir src-tauri/icons/
         shell: pwsh
 
       - name: Install Tauri CLI

@@ -45,11 +45,26 @@ jobs:
       - name: Install ImageMagick and create ICO
         run: |
           choco install imagemagick -y --no-progress
-          refreshenv
+          # Refresh PATH
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          magick convert src-tauri/icons/icon.png -resize 256x256 -define icon:auto-resize=256,128,64,48,32,16 src-tauri/icons/icon.ico
-          if (Test-Path src-tauri/icons/icon.ico) { Write-Host "ICO created successfully" } else { Write-Host "ICO creation failed"; exit 1 }
-          dir src-tauri/icons/
+          # Find magick executable
+          $magickPath = Get-Command magick -ErrorAction SilentlyContinue
+          if (-not $magickPath) {
+            $magickPath = "C:\ProgramData\chocolatey\bin\magick.exe"
+          }
+          Write-Host "Using ImageMagick at: $magickPath"
+          # Create ICO with multiple sizes
+          & $magickPath convert src-tauri/icons/icon.png -resize 256x256 -define icon:auto-resize=256,128,64,48,32,16 src-tauri/icons/icon.ico
+          # Verify creation
+          if (Test-Path src-tauri/icons/icon.ico) {
+            $size = (Get-Item src-tauri/icons/icon.ico).Length
+            Write-Host "ICO created successfully: $size bytes"
+          } else {
+            Write-Host "ICO creation failed - file not found"
+            exit 1
+          }
+          Write-Host "Icons directory contents:"
+          Get-ChildItem src-tauri/icons/
         shell: pwsh
 
       - name: Install Tauri CLI

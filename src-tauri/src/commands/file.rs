@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tauri_plugin_dialog::{DialogExt, FileDialogBuilder};
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileNode {

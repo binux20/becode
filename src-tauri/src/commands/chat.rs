@@ -1,9 +1,8 @@
 //! Chat commands for AI interaction
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Window};
+use tauri::{Emitter, Window};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 /// Flag to cancel ongoing execution
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);

@@ -78,9 +78,9 @@ jobs:
       - name: List build output
         run: |
           echo "=== Release folder ==="
-          dir target\release\*.exe
+          dir src-tauri\target\release\*.exe
           echo "=== Bundle folder ==="
-          dir target\release\bundle\ /s
+          dir src-tauri\target\release\bundle\ /s
         shell: cmd
         continue-on-error: true
 
@@ -88,19 +88,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: BeCode-Windows-MSI
-          path: target/release/bundle/msi/*.msi
+          path: src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: warn
 
       - name: Upload NSIS artifact
         uses: actions/upload-artifact@v4
         with:
           name: BeCode-Windows-NSIS
-          path: target/release/bundle/nsis/*.exe
+          path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: warn
 
       - name: Upload portable exe
         uses: actions/upload-artifact@v4
         with:
           name: BeCode-Windows-Portable
-          path: target/release/becode-desktop.exe
+          path: src-tauri/target/release/becode-desktop.exe
           if-no-files-found: warn
